@@ -210,6 +210,11 @@ function initAnimations() {
     io.observe(item);
   });
 
+  // Gallery section
+  const galleryIntro = document.querySelector('.gallery-intro');
+  if (galleryIntro) io.observe(galleryIntro);
+  document.querySelectorAll('.pm-featured, .pm-card').forEach(el => io.observe(el));
+
   // ── Stat counters (GSAP number animation, triggered by IO) ──
   const counterIO = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
