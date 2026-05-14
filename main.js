@@ -1,9 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── RENDERER ──────────────────────────────────────────────────────────────
@@ -15,7 +12,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.35;
+renderer.toneMappingExposure = 1.0;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
@@ -29,20 +26,9 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
   mobileScale = window.innerWidth < 768 ? 0.55 : 1;
 }, { passive: true });
 
-// ─── POST-PROCESSING (BLOOM) ───────────────────────────────────────────────
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloomPass = new UnrealBloomPass(
-  new THREE.Vector2(window.innerWidth, window.innerHeight),
-  0.06,   // strength — barely-there glow, preserves dark background
-  0.15,   // radius — tight, stays on specular peaks only
-  0.97    // threshold — absolute hottest highlights only (97%+ brightness)
-);
-composer.addPass(bloomPass);
 
 // ─── LIGHTS ────────────────────────────────────────────────────────────────
 
@@ -349,7 +335,7 @@ function animate() {
   fillLight.position.x = Math.sin(t * 0.4) * 1.5;
   fillLight.position.z = Math.cos(t * 0.3) * 1.5 + 3;
 
-  composer.render();
+  renderer.render(scene, camera);
 }
 
 animate();
