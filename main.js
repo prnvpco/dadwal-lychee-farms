@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── RENDERER ──────────────────────────────────────────────────────────────
@@ -27,7 +29,20 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  mobileScale = window.innerWidth < 768 ? 0.55 : 1;
 }, { passive: true });
+
+// ─── POST-PROCESSING (BLOOM) ───────────────────────────────────────────────
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  0.14,   // strength — whisper-light glow
+  0.28,   // radius — stays on the model, won't flood background
+  0.95    // threshold — only absolute specular highlights (95%+ brightness)
+);
+composer.addPass(bloomPass);
 
 // ─── LIGHTS ────────────────────────────────────────────────────────────────
 
@@ -96,6 +111,23 @@ let loaded = false;
 let autoRotY = 0;
 let targetMX = 0, targetMY = 0;
 let mouseX = 0, mouseY = 0;
+let mobileScale = window.innerWidth < 768 ? 0.55 : 1;
+
+// ─── PRELOADER ─────────────────────────────────────────────────────────────
+const preStartTime = Date.now();
+function updatePreloader(pct) {
+  const bar = document.getElementById('pre-bar');
+  if (bar) bar.style.width = `${Math.round(pct * 100)}%`;
+}
+function hidePreloader() {
+  const pre = document.getElementById('preloader');
+  if (!pre) return;
+  const delay = Math.max(0, 900 - (Date.now() - preStartTime));
+  setTimeout(() => {
+    pre.classList.add('hidden');
+    setTimeout(() => pre.remove(), 750);
+  }, delay);
+}
 
 const lycheeWrapper = new THREE.Group();
 scene.add(lycheeWrapper);
@@ -107,35 +139,40 @@ dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
-gltfLoader.load('./lychee_1.glb', (gltf) => {
-  const model = gltf.scene;
+gltfLoader.load('./lychee_1.glb',
+  (gltf) => {
+    const model = gltf.scene;
 
-  model.scale.setScalar(1);
-  const box0 = new THREE.Box3().setFromObject(model);
-  const size0 = box0.getSize(new THREE.Vector3());
-  baseScale = 1 / Math.max(size0.x, size0.y, size0.z);
-  model.scale.setScalar(baseScale);
+    model.scale.setScalar(1);
+    const box0 = new THREE.Box3().setFromObject(model);
+    const size0 = box0.getSize(new THREE.Vector3());
+    baseScale = 1 / Math.max(size0.x, size0.y, size0.z);
+    model.scale.setScalar(baseScale);
 
-  const box1 = new THREE.Box3().setFromObject(model);
-  const center = box1.getCenter(new THREE.Vector3());
-  model.position.sub(center);
+    const box1 = new THREE.Box3().setFromObject(model);
+    const center = box1.getCenter(new THREE.Vector3());
+    model.position.sub(center);
 
-  model.traverse(child => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
+    model.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
 
-  lycheeWrapper.add(model);
-  loaded = true;
+    lycheeWrapper.add(model);
+    loaded = true;
 
-  // Set initial position immediately
-  lycheeWrapper.position.set(proxy.x, proxy.y, 0);
-  lycheeWrapper.scale.setScalar(TARGET_DIAMETER * proxy.s);
+    // Set initial position immediately
+    lycheeWrapper.position.set(proxy.x, proxy.y, 0);
+    lycheeWrapper.scale.setScalar(TARGET_DIAMETER * proxy.s * mobileScale);
 
-  setupScrollAnimations();
-}, undefined, (err) => console.error('GLB error', err));
+    setupScrollAnimations();
+    hidePreloader();
+  },
+  (xhr) => { updatePreloader(xhr.loaded / xhr.total); },
+  (err) => console.error('GLB error', err)
+);
 
 // ─── SCROLL ANIMATIONS (lychee zig-zag) ───────────────────────────────────
 // Single timeline driven by one ScrollTrigger — the only correct GSAP
@@ -174,6 +211,11 @@ function setupScrollAnimations() {
 
 function initAnimations() {
   // Hero text is handled by CSS @keyframes (compositor-thread, never throttled).
+
+  // Wrap h2 elements for clip-path reveal
+  document.querySelectorAll('.panel-card h2, .quality-header h2, .gallery-intro h2').forEach(h2 => {
+    h2.classList.add('h2-reveal');
+  });
 
   // ── IntersectionObserver for all content reveals ──
   // CSS transitions do the animation; IntersectionObserver triggers them.
@@ -285,7 +327,7 @@ function animate() {
     lycheeWrapper.rotation.y = autoRotY + targetMX * 0.22;
     lycheeWrapper.rotation.x = Math.sin(t * 0.35) * 0.04 + targetMY * 0.1;
     lycheeWrapper.rotation.z = targetMX * 0.04;
-    lycheeWrapper.scale.setScalar(TARGET_DIAMETER * proxy.s);
+    lycheeWrapper.scale.setScalar(TARGET_DIAMETER * proxy.s * mobileScale);
   }
 
   particles.rotation.y = t * 0.014;
@@ -295,7 +337,7 @@ function animate() {
   fillLight.position.x = Math.sin(t * 0.4) * 1.5;
   fillLight.position.z = Math.cos(t * 0.3) * 1.5 + 3;
 
-  renderer.render(scene, camera);
+  composer.render();
 }
 
 animate();
