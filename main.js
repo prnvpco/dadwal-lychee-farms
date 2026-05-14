@@ -38,9 +38,9 @@ const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
-  0.14,   // strength — whisper-light glow
-  0.28,   // radius — stays on the model, won't flood background
-  0.95    // threshold — only absolute specular highlights (95%+ brightness)
+  0.06,   // strength — barely-there glow, preserves dark background
+  0.15,   // radius — tight, stays on specular peaks only
+  0.97    // threshold — absolute hottest highlights only (97%+ brightness)
 );
 composer.addPass(bloomPass);
 
@@ -213,7 +213,7 @@ function initAnimations() {
   // Hero text is handled by CSS @keyframes (compositor-thread, never throttled).
 
   // Wrap h2 elements for clip-path reveal
-  document.querySelectorAll('.panel-card h2, .quality-header h2, .gallery-intro h2').forEach(h2 => {
+  document.querySelectorAll('.panel-card h2, .quality-header h2, .gallery-intro h2, .press-header h2').forEach(h2 => {
     h2.classList.add('h2-reveal');
   });
 
@@ -256,6 +256,18 @@ function initAnimations() {
   const galleryIntro = document.querySelector('.gallery-intro');
   if (galleryIntro) io.observe(galleryIntro);
   document.querySelectorAll('.pm-featured, .pm-card').forEach(el => io.observe(el));
+  const pmBanner = document.querySelector('.pm-banner');
+  if (pmBanner) io.observe(pmBanner);
+
+  // Press section
+  const pressHeader = document.querySelector('.press-header');
+  if (pressHeader) io.observe(pressHeader);
+  document.querySelectorAll('.press-clip').forEach(el => {
+    if (el.dataset.from === 'left') el.classList.add('from-left');
+    io.observe(el);
+  });
+  const pressStats = document.querySelector('.press-stats');
+  if (pressStats) io.observe(pressStats);
 
   // ── Stat counters (GSAP number animation, triggered by IO) ──
   const counterIO = new IntersectionObserver((entries) => {
