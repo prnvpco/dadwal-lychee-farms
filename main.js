@@ -7,7 +7,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Cap pixel ratio lower on mobile — halves GPU fill-rate cost on retina phones
+const isMobile = window.innerWidth < 768;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -26,7 +28,8 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  mobileScale = window.innerWidth < 768 ? 0.55 : 1;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 768 ? 1.5 : 2));
+  mobileScale = getMobileScale();
 }, { passive: true });
 
 
@@ -54,7 +57,7 @@ scene.add(topLight);
 
 // ─── PARTICLES ─────────────────────────────────────────────────────────────
 
-const pCount = 280;
+const pCount = window.innerWidth < 480 ? 80 : window.innerWidth < 768 ? 140 : 280;
 const pGeo = new THREE.BufferGeometry();
 const pPos = new Float32Array(pCount * 3);
 for (let i = 0; i < pCount; i++) {
@@ -97,7 +100,15 @@ let loaded = false;
 let autoRotY = 0;
 let targetMX = 0, targetMY = 0;
 let mouseX = 0, mouseY = 0;
-let mobileScale = window.innerWidth < 768 ? 0.55 : 1;
+function getMobileScale() {
+  const w = window.innerWidth;
+  if (w < 280) return 0.38;
+  if (w < 390) return 0.44;
+  if (w < 480) return 0.50;
+  if (w < 768) return 0.58;
+  return 1;
+}
+let mobileScale = getMobileScale();
 
 // ─── PRELOADER ─────────────────────────────────────────────────────────────
 const preStartTime = Date.now();
@@ -199,7 +210,7 @@ function initAnimations() {
   // Hero text is handled by CSS @keyframes (compositor-thread, never throttled).
 
   // Wrap h2 elements for clip-path reveal
-  document.querySelectorAll('.panel-card h2, .quality-header h2, .gallery-intro h2, .press-header h2').forEach(h2 => {
+  document.querySelectorAll('.panel-card h2, .quality-header h2, .gallery-intro h2, .press-header h2, .adopt-card h2').forEach(h2 => {
     h2.classList.add('h2-reveal');
   });
 
@@ -227,6 +238,17 @@ function initAnimations() {
   document.querySelectorAll('.panel-card').forEach(card => {
     if (card.dataset.from === 'left') card.classList.add('from-left');
     io.observe(card);
+  });
+
+  // Adopt a Tree card
+  const adoptCard = document.querySelector('.adopt-card');
+  if (adoptCard) {
+    adoptCard.classList.add('from-left');
+    io.observe(adoptCard);
+  }
+  document.querySelectorAll('.af-item').forEach((el, i) => {
+    el.style.transitionDelay = `${0.1 + i * 0.09}s`;
+    io.observe(el);
   });
 
   // Quality header
