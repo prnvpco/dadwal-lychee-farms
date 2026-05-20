@@ -999,7 +999,7 @@ footer {
   .quality-grid { grid-template-columns: 1fr 60px 1fr; gap: 1rem; }
 
   .photo-mosaic { height: clamp(360px, 50vh, 520px); }
-  .pm-banner { height: clamp(120px, 18vh, 190px); }
+  .pm-banner { height: clamp(220px, 36vh, 380px); }
 
   .press-clips { flex-direction: row; flex-wrap: wrap; }
   .press-clip { flex: 1; min-width: 240px; }
@@ -1044,7 +1044,7 @@ footer {
   }
   .pm-stack { flex-direction: row; height: 260px; }
   .pm-card { flex: 1; }
-  .pm-banner { height: 110px; }
+  .pm-banner { height: clamp(200px, 34vw, 320px); }
 
   /* Press */
   .press-clips { flex-direction: column; }
@@ -1106,7 +1106,7 @@ footer {
 
   .photo-mosaic { grid-template-rows: 200px 200px; }
   .pm-stack { height: 200px; }
-  .pm-banner { height: 90px; }
+  .pm-banner { height: 180px; }
 
   .ps-num { font-size: 1.85rem; }
   .press-stat { min-width: 44%; }
@@ -1126,7 +1126,7 @@ footer {
   .cs { min-width: 40%; }
   .photo-mosaic { grid-template-rows: 165px 165px; }
   .pm-stack { height: 165px; }
-  .pm-banner { height: 72px; }
+  .pm-banner { height: 150px; }
   h2 { font-size: 1.65rem; }
 }
 
@@ -1541,7 +1541,7 @@ footer {
 .pm-banner {
   width: 100%;
   max-width: 1050px;
-  height: clamp(130px, 18vh, 220px);
+  height: clamp(280px, 42vh, 480px);
   border-radius: 22px;
   overflow: hidden;
   position: relative;
@@ -1554,7 +1554,7 @@ footer {
 .pm-banner img {
   width: 100%; height: 100%;
   object-fit: cover;
-  object-position: center 40%;
+  object-position: center center;
   display: block;
 }
 
