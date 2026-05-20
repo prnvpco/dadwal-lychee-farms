@@ -2,7 +2,7 @@
 .vercel
 
 # Claude
-.claude
+.claude*
 
 # macOS
 .DS_Store
