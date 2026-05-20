@@ -363,5 +363,96 @@ function animate() {
 animate();
 
 // ─── KICK OFF CONTENT ANIMATIONS ───────────────────────────────────────────
-// Run after DOM is ready (module scripts are deferred, so DOM is already parsed)
 initAnimations();
+
+// ─── LIGHTBOX ──────────────────────────────────────────────────────────────
+
+function initLightbox() {
+  const lb      = document.getElementById('lightbox');
+  const lbImg   = document.getElementById('lb-img');
+  const lbCap   = document.getElementById('lb-caption');
+  const lbDots  = document.getElementById('lb-dots');
+  const lbClose = document.getElementById('lb-close');
+  const lbPrev  = document.getElementById('lb-prev');
+  const lbNext  = document.getElementById('lb-next');
+
+  // Collect all gallery photos (featured + stack cards)
+  const photos = [...document.querySelectorAll('.pm-featured img, .pm-card img')];
+  let current = 0;
+
+  // Build dots
+  photos.forEach((_, i) => {
+    const d = document.createElement('span');
+    d.className = 'lb-dot';
+    lbDots.appendChild(d);
+  });
+
+  function updateDots() {
+    lbDots.querySelectorAll('.lb-dot').forEach((d, i) =>
+      d.classList.toggle('active', i === current));
+  }
+
+  function show(idx) {
+    current = (idx + photos.length) % photos.length;
+    const el = photos[current];
+    // Swap with a quick fade
+    lbImg.style.opacity = '0';
+    lbImg.style.transform = 'scale(0.96)';
+    setTimeout(() => {
+      lbImg.src = el.src;
+      lbImg.alt = el.alt;
+      lbImg.style.opacity = '1';
+      lbImg.style.transform = '';
+    }, 160);
+    lbCap.textContent =
+      el.closest('[class*="pm-"]')?.querySelector('.pm-caption')?.textContent || '';
+    updateDots();
+  }
+
+  function open(idx) {
+    show(idx);
+    lb.classList.add('lb-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close() {
+    lb.classList.remove('lb-open');
+    document.body.style.overflow = '';
+  }
+
+  // Attach click to each photo container
+  photos.forEach((img, i) => {
+    const wrap = img.closest('.pm-featured, .pm-card');
+    if (wrap) wrap.addEventListener('click', () => open(i));
+  });
+
+  lbClose.addEventListener('click', close);
+  lbPrev.addEventListener('click', e => { e.stopPropagation(); show(current - 1); });
+  lbNext.addEventListener('click', e => { e.stopPropagation(); show(current + 1); });
+
+  // Close on backdrop click
+  lb.addEventListener('click', e => {
+    if (e.target === lb || e.target === document.getElementById('lb-img-wrap')) close();
+  });
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (!lb.classList.contains('lb-open')) return;
+    if (e.key === 'Escape')      close();
+    if (e.key === 'ArrowLeft')   show(current - 1);
+    if (e.key === 'ArrowRight')  show(current + 1);
+  });
+
+  // Touch swipe
+  let touchX = 0;
+  lb.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+  lb.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) dx < 0 ? show(current + 1) : show(current - 1);
+  }, { passive: true });
+
+  // Style the img transition
+  lbImg.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+}
+
+initLightbox();
